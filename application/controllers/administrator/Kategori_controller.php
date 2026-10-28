@@ -1,130 +1,122 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class kategori_controller extends CI_Controller {
-
+class Kategori_controller extends CI_Controller
+{
     public function __construct()
     {
         parent::__construct();
         is_admin_logged_in();
-        $this->load->model('produk_kategori_model');
+        $this->load->model('Produk_kategori_model', 'kategori_model');
+        $this->load->library('form_validation');
     }
 
-    // ===================== TAMPIL (READ) =====================
-    public function index() {
-        $data['title'] = 'Kategori';
-        $data['list_kategori'] = $this->produk_kategori_model->get_all();
+    private function render($view, $data = array())
+    {
+        $data['title'] = isset($data['title']) ? $data['title'] : 'Kategori Produk';
+        $data['full_name'] = $this->session->userdata('full_name');
         $this->load->view('administrator/templates/header', $data);
-        $this->load->view('administrator/templates/sidebar');
-        $this->load->view('administrator/kategori/index', $data);
+        $this->load->view('administrator/templates/sidebar', $data);
+        $this->load->view('kategori/' . $view, $data);
         $this->load->view('administrator/templates/footer');
     }
 
-    // ===================== TAMBAH (CREATE) =====================
-    public function tambah_kategori()
+    public function index()
     {
-        $data['title'] = 'Tambah Kategori';
-
-        $this->form_validation->set_rules('nama_kategori', 'Nama Kategori', 'required');
-        $this->form_validation->set_rules('deskripsi_kategori', 'Deskripsi', 'trim');
-
-        if ($this->form_validation->run() !== FALSE) {
-            $this->__simpan_kategori();
-        } else {
-            $this->load->view('administrator/templates/header', $data);
-            $this->load->view('administrator/templates/sidebar');
-            $this->load->view('administrator/kategori/tambah_kategori');
-            $this->load->view('administrator/templates/footer');
-        }
+        $data['title'] = 'Data Kategori | PWB';
+        $data['kategori'] = $this->kategori_model->get_all();
+        $this->render('index', $data);
     }
 
-    private function __simpan_kategori()
+    public function tambah()
     {
-        $data = [
-            'nama' => ucwords($this->input->post('nama_kategori')),
-            'deskripsi' => ucfirst($this->input->post('deskripsi_kategori'))
-        ];
-        $simpan = $this->produk_kategori_model->tambah($data);
-
-        if ($simpan) {
-            $this->_alert('success', 'Berhasil menambahkan kategori!!');
-        } else {
-            $this->_alert('danger', 'Gagal menambahkan kategori!!');
-        }
-        redirect('admin/kategori');
+        $this->render('tambah_kategori', array('title' => 'Tambah Kategori | PWB'));
     }
 
-    // ===================== HAPUS (DELETE) =====================
-    public function hapus_kategori($id)
+    public function simpan()
     {
-        // check apakah ada kategori
-        $kategori = $this->produk_kategori_model->get_by_id($id);
-        if ($kategori) {
-            $hapus = $this->produk_kategori_model->hapus($id);
-            if ($hapus) {
-                $this->_alert('success', 'Berhasil menghapus kategori!!');
-            } else {
-                $this->_alert('danger', 'Gagal menghapus kategori!!');
-            }
+        $this->form_validation->set_rules('nama', 'Nama kategori', 'required|trim|max_length[100]');
+        $this->form_validation->set_rules('deskripsi', 'Deskripsi', 'trim|max_length[100]');
+
+        if ($this->form_validation->run() === FALSE) {
+            $this->render('tambah_kategori', array('title' => 'Tambah Kategori | PWB'));
+            return;
+        }
+
+        $data = array(
+            'nama' => trim($this->input->post('nama', TRUE)),
+            'deskripsi' => trim($this->input->post('deskripsi', TRUE))
+        );
+
+        if ($this->kategori_model->insert($data)) {
+            $this->session->set_flashdata('success', 'Kategori berhasil ditambahkan.');
         } else {
-            $this->_alert('danger', 'Kategori tidak ditemukan!!');
+            $this->session->set_flashdata('error', 'Kategori gagal ditambahkan.');
         }
         redirect('admin/kategori');
     }
 
-    // ===================== UBAH (UPDATE) =====================
-    public function ubah_kategori($id)
+    public function hapus($id)
     {
-        // check dulu apakah id dengan kategori ada?
-        $kategori = $this->produk_kategori_model->get_by_id($id);
-        if ($kategori) {
-            $this->form_validation->set_rules('nama_kategori', 'Nama Kategori', 'required');
-            $this->form_validation->set_rules('deskripsi_kategori', 'Deskripsi', 'trim');
-
-            if ($this->form_validation->run() !== FALSE) {
-                $this->__ubah_kategori($id);
-            } else {
-                $data['title'] = 'Ubah Kategori';
-                $data['kategori'] = $kategori;
-                $this->load->view('administrator/templates/header', $data);
-                $this->load->view('administrator/templates/sidebar');
-                $this->load->view('administrator/kategori/ubah_kategori', $data);
-                $this->load->view('administrator/templates/footer');
-            }
-        } else {
-            $this->_alert('danger', 'Kategori tidak ditemukan!!');
-            redirect('admin/kategori');
+        if (!$this->kategori_model->get_by_id($id)) {
+            show_404();
+            return;
         }
-    }
 
-    private function __ubah_kategori($id)
-    {
-        $data = [
-            'nama' => ucwords($this->input->post('nama_kategori')),
-            'deskripsi' => ucfirst($this->input->post('deskripsi_kategori'))
-        ];
-        $ubah = $this->produk_kategori_model->ubah($data, $id);
-
-        if ($ubah) {
-            $this->_alert('success', 'Berhasil mengubah kategori!!');
+        // kategori yang masih dipakai produk tidak boleh dihapus (relasi foreign key)
+        if ($this->kategori_model->count_produk($id) > 0) {
+            $this->session->set_flashdata('error', 'Kategori gagal dihapus. Kategori masih digunakan oleh produk.');
+        } elseif ($this->kategori_model->delete($id)) {
+            $this->session->set_flashdata('success', 'Kategori berhasil dihapus.');
         } else {
-            $this->_alert('danger', 'Gagal mengubah kategori!!');
+            $this->session->set_flashdata('error', 'Kategori gagal dihapus.');
         }
         redirect('admin/kategori');
     }
 
-    // ===================== PESAN (alert Bootstrap 4 / AdminLTE 3) =====================
-    private function _alert($type, $pesan)
+    public function ubah($id)
     {
-        $icon = ($type === 'success') ? 'fa-check-circle' : 'fa-exclamation-triangle';
-        $this->session->set_flashdata('message', '
-            <div class="alert alert-' . $type . ' alert-dismissible fade show" role="alert">
-                <i class="fas ' . $icon . ' mr-2"></i>
-                ' . $pesan . '
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        ');
+        $kategori = $this->kategori_model->get_by_id($id);
+        if (!$kategori) {
+            show_404();
+            return;
+        }
+
+        $this->render('ubah_kategori', array(
+            'title' => 'Ubah Kategori | PWB',
+            'kategori' => $kategori
+        ));
+    }
+
+    public function update($id)
+    {
+        $kategori = $this->kategori_model->get_by_id($id);
+        if (!$kategori) {
+            show_404();
+            return;
+        }
+
+        $this->form_validation->set_rules('nama', 'Nama kategori', 'required|trim|max_length[100]');
+        $this->form_validation->set_rules('deskripsi', 'Deskripsi', 'trim|max_length[100]');
+
+        if ($this->form_validation->run() === FALSE) {
+            $this->render('ubah_kategori', array(
+                'title' => 'Ubah Kategori | PWB',
+                'kategori' => $kategori
+            ));
+            return;
+        }
+
+        $data = array(
+            'nama' => trim($this->input->post('nama', TRUE)),
+            'deskripsi' => trim($this->input->post('deskripsi', TRUE))
+        );
+
+        if ($this->kategori_model->update($id, $data)) {
+            $this->session->set_flashdata('success', 'Kategori berhasil diubah.');
+        } else {
+            $this->session->set_flashdata('error', 'Kategori gagal diubah.');
+        }
+        redirect('admin/kategori');
     }
 }

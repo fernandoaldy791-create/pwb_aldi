@@ -1,64 +1,50 @@
 <?php
-defined('BASEPATH') or exit('No direct script access allowed');
+defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Admin_auth_controller extends CI_Controller
-{
-
-    public function __construct()
-    {
+class Admin_auth_controller extends CI_Controller {
+    public function __construct() {
         parent::__construct();
-        // Load model
-        $this->load->model('Administrator_model');
+        $this->load->model('Administrator_model', 'administrator');
     }
 
-
-    public function index()
-    {
-        $data['title'] = 'Delphi Pet Shop';
-
-        $this->form_validation->set_rules('inputUsername', 'Username', 'required');
-        $this->form_validation->set_rules('inputPassword', 'Password', 'required');
-        if ($this->form_validation->run() !== FALSE) {
-            $this->_login();
-        } else {
-            $this->load->view('administrator/login', $data);
+    public function index() {
+        if ($this->session->userdata('admin_login')) {
+            redirect('admin/dashboard');
+            return;
         }
+        $data['title'] = 'Login Administrator | Toko Online';
+        $this->load->view('administrator/login', $data);
     }
 
-    private function _login()
-    {
-        $username = $this->input->post('inputUsername');
-        $password = $this->input->post('inputPassword');
-        $check = $this->Administrator_model->check_login($username, md5($password));
-        if ($check) {
-            // jika ada
-            $session_data = array(
-                'id'  => $check['id_admin'],
-                'username'     => $check['username'],
-                'full_name' => $check['full_name'],
-                'admin_login' => TRUE
-            );
-            $this->session->set_userdata($session_data);
-            redirect('admin');
+    public function auth() {
+        $this->form_validation->set_rules('username', 'Username', 'required|trim');
+        $this->form_validation->set_rules('password', 'Password', 'required');
+        if ($this->form_validation->run() === FALSE) {
+            $this->session->set_flashdata('error', 'Username dan password wajib diisi.');
+            redirect('admin/login');
+            return;
+        }
+
+        $username = $this->input->post('username', TRUE);
+        $password = $this->input->post('password', FALSE);
+        $admin = $this->administrator->check_login($username, $password);
+        if ($admin) {
+            $this->session->set_userdata(array(
+                'admin_login' => TRUE,
+                'admin_id' => $admin['id_admin'],
+                'username' => $admin['username'],
+                'full_name' => $admin['full_name']
+            ));
+            redirect('admin/dashboard');
         } else {
-            // jika tidak ada
-            $this->session->set_flashdata('message', '
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>
-                    Username dan password salah!!
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-            ');
+            $this->session->set_flashdata('error', 'Username atau password salah!');
             redirect('admin/login');
         }
     }
 
-    public function logout()
-    {
-        $session_data = array('id', 'username', 'full_name', 'admin_login');
-        $this->session->unset_userdata($session_data);
+    public function logout() {
+        $this->session->unset_userdata(array('admin_login', 'admin_id', 'username', 'full_name'));
+        $this->session->sess_destroy();
         redirect('admin/login');
     }
 }

@@ -66,7 +66,9 @@
 switch (ENVIRONMENT)
 {
 	case 'development':
-		error_reporting(-1);
+		// CodeIgniter 3.1.x belum bebas "deprecated" di PHP 8.2+ (dynamic property).
+		// Pesan deprecated disembunyikan agar tidak merusak redirect/session/header.
+		error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
 		ini_set('display_errors', 1);
 	break;
 
