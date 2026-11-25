@@ -23,7 +23,15 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = 'http://localhost/pwb_aldi/';
+// base_url dideteksi otomatis, jadi proyek bisa ditaruh di folder apa pun
+// (mis. http://localhost/pwb_aldi/ atau http://localhost/pwbti/) tanpa edit manual.
+if (isset($_SERVER['HTTP_HOST'])) {
+    $_proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $_dir   = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+    $config['base_url'] = $_proto . '://' . $_SERVER['HTTP_HOST'] . rtrim($_dir, '/') . '/';
+} else {
+    $config['base_url'] = 'http://localhost/pwb_aldi/';
+}
 
 /*
 |--------------------------------------------------------------------------

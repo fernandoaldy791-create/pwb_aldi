@@ -230,6 +230,12 @@ class Produk_controller extends CI_Controller
         // check apakah ada produk
         $produk = $this->produk_model->get_by_id($id);
         if ($produk) {
+            // produk yang sudah pernah dipesan tidak boleh dihapus (cek SEBELUM gambar dihapus)
+            if ($this->produk_model->count_pesanan($id) > 0) {
+                $this->__alert('danger', 'Produk tidak dapat dihapus karena sudah pernah dipesan pelanggan.');
+                redirect('admin/produk');
+                return;
+            }
             // ambil data gambar
             $list_gambar = $this->produk_gambar_model->get_by_produk_id($id);
             foreach ($list_gambar as $gambar) {
