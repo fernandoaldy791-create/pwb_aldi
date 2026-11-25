@@ -2,12 +2,12 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
- * Keranjang belanja pelanggan (wajib login).
- * @property Keranjang_model $keranjang_model
- * @property Keranjang_produk_model $keranjang_produk_model
- * @property Produk_model $produk_model
- * @property Produk_gambar_model $produk_gambar_model
- * @property CI_Form_validation $form_validation
+
+ * @property Keranjang_model 
+ * @property Keranjang_produk_model 
+ * @property Produk_model 
+ * @property Produk_gambar_model 
+ * @property CI_Form_validation
  */
 class Keranjang_controller extends CI_Controller
 {
@@ -25,9 +25,6 @@ class Keranjang_controller extends CI_Controller
         }
     }
 
-    /* =====================================================================
-     *  TAMPIL KERANJANG
-     * ===================================================================== */
     public function index()
     {
         $pelanggan_id = $this->session->userdata('id');
@@ -38,11 +35,11 @@ class Keranjang_controller extends CI_Controller
         $keranjang_id = 0;
 
         if ($keranjang) {
-            // ambil data produk di keranjang berdasarkan id_keranjang
+          
             $keranjang_id = $keranjang[0]['id_keranjang'];
             $keranjang_produk = $this->keranjang_produk_model->get_by_keranjang($keranjang_id);
 
-            // ambil data produk berdasarkan id_produk
+          
             foreach ($keranjang_produk as $item) {
                 $produk_data = $this->produk_model->get_by_id($item['produk_id']);
                 if ($produk_data) {
@@ -53,7 +50,7 @@ class Keranjang_controller extends CI_Controller
                 }
             }
 
-            // total harga produk di keranjang
+          
             foreach ($produk as $item) {
                 $total += $item['harga'] * $item['jumlah'];
             }
@@ -67,9 +64,7 @@ class Keranjang_controller extends CI_Controller
         $this->load->view('ecom/template/footer');
     }
 
-    /* =====================================================================
-     *  TAMBAH PRODUK KE KERANJANG (form di halaman detail produk)
-     * ===================================================================== */
+
     public function tambah()
     {
         $this->form_validation->set_rules('id_produk', 'ID produk', 'required|is_natural_no_zero');
@@ -96,7 +91,7 @@ class Keranjang_controller extends CI_Controller
             return;
         }
 
-        // cari keranjang pelanggan, buat baru jika belum ada
+     
         $keranjang = $this->keranjang_model->get_by_pelanggan($pelanggan_id);
         if (!$keranjang) {
             $this->db->insert('keranjang', [
@@ -111,7 +106,6 @@ class Keranjang_controller extends CI_Controller
         $produk_di_keranjang = $this->keranjang_produk_model->get_by_produk_keranjang($keranjang_id, $id_produk);
         $jumlah_baru = $jumlah + ($produk_di_keranjang ? (int) $produk_di_keranjang['jumlah'] : 0);
 
-        // cek stok (jumlah di keranjang + jumlah yang ditambahkan tidak boleh melebihi stok)
         if ($produk['stok'] < $jumlah_baru) {
             $sudah = $produk_di_keranjang ? (int) $produk_di_keranjang['jumlah'] : 0;
             $pesan = 'Stok produk tidak cukup! Stok tersisa ' . (int) $produk['stok'] . '.';
@@ -138,9 +132,7 @@ class Keranjang_controller extends CI_Controller
         redirect(base_url("keranjang"));
     }
 
-    /* =====================================================================
-     *  UBAH JUMLAH (tombol - dan + di halaman keranjang)
-     * ===================================================================== */
+
     public function ubah_keranjang()
     {
         $this->form_validation->set_rules('id_keranjang_produk', 'ID keranjang', 'required|is_natural_no_zero');
@@ -158,7 +150,7 @@ class Keranjang_controller extends CI_Controller
         $jumlah = (int) $this->input->post('jumlah');
         $id_keranjang_produk = (int) $this->input->post('id_keranjang_produk');
 
-        // cek dulu apakah benar produk ini ada di keranjang MILIK pelanggan yang login
+   
         $keranjang_produk = $this->__item_milik_pelanggan($id_keranjang_produk);
         if (!$keranjang_produk) {
             $this->__alert('danger', 'Produk tidak ada di keranjang!');
@@ -174,16 +166,12 @@ class Keranjang_controller extends CI_Controller
             return;
         }
 
-        // ubah jumlah produk di keranjang berdasarkan id keranjang produk
         $this->keranjang_produk_model->ubah(['jumlah' => $jumlah], $id_keranjang_produk);
         $this->__update_total($keranjang_produk['keranjang_id']);
         $this->__alert('success', 'Produk berhasil diubah di keranjang!');
         redirect(base_url('keranjang'));
     }
 
-    /* =====================================================================
-     *  HAPUS PRODUK DARI KERANJANG
-     * ===================================================================== */
     public function hapus_produk_keranjang()
     {
         $this->form_validation->set_rules('id_keranjang_produk', 'ID keranjang produk', 'required|is_natural_no_zero');
@@ -198,7 +186,7 @@ class Keranjang_controller extends CI_Controller
     {
         $id_keranjang_produk = (int) $this->input->post('id_keranjang_produk');
 
-        // cek dulu apakah benar produk ini ada di keranjang milik pelanggan yang login
+
         $keranjang_produk = $this->__item_milik_pelanggan($id_keranjang_produk);
         if (!$keranjang_produk) {
             $this->__alert('danger', 'Produk tidak ada di keranjang!');
@@ -207,10 +195,10 @@ class Keranjang_controller extends CI_Controller
         }
 
         $keranjang_id = $keranjang_produk['keranjang_id'];
-        // hapus dari keranjang berdasarkan id keranjang produk
+
         $this->keranjang_produk_model->hapus($id_keranjang_produk);
 
-        // jika tidak ada produk lagi di keranjang, hapus keranjang
+  
         $sisa = $this->keranjang_produk_model->get_by_keranjang($keranjang_id);
         if (empty($sisa)) {
             $this->keranjang_model->hapus($keranjang_id);
@@ -224,11 +212,8 @@ class Keranjang_controller extends CI_Controller
         redirect(base_url('keranjang'));
     }
 
-    /* =====================================================================
-     *  HELPER PRIVATE
-     * ===================================================================== */
+   
 
-    // item keranjang_produk, hanya jika keranjangnya milik pelanggan yang sedang login
     private function __item_milik_pelanggan($id_keranjang_produk)
     {
         $item = $this->keranjang_produk_model->get_by_id($id_keranjang_produk);
@@ -239,7 +224,7 @@ class Keranjang_controller extends CI_Controller
         return $keranjang ? $item : null;
     }
 
-    // hitung ulang total harga keranjang dan simpan di tabel keranjang
+    
     private function __update_total($keranjang_id)
     {
         $total = 0;

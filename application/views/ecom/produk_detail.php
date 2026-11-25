@@ -88,7 +88,6 @@
 </div>
 
 <script>
-    // Slick dimuat di footer; inisialisasi dijalankan setelah semua script termuat.
     window.addEventListener('load', function() {
         $('.product-slick').slick({
             slidesToShow: 1,

@@ -2,7 +2,6 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
- * Checkout: mengubah isi keranjang menjadi pesanan (tombol "Checkout" di halaman keranjang).
  * @property Keranjang_model $keranjang_model
  * @property Keranjang_produk_model $keranjang_produk_model
  * @property Pesanan_model $pesanan_model
@@ -35,7 +34,6 @@ class Pesanan_controller extends CI_Controller
         $this->load->view('ecom/template/footer');
     }
 
-    // detail satu pesanan (hanya milik sendiri)
     public function detail($id = 0)
     {
         $pesanan = $this->pesanan_model->get_by_id_pelanggan($id, $this->session->userdata('id'));
@@ -51,7 +49,7 @@ class Pesanan_controller extends CI_Controller
         $this->load->view('ecom/template/footer');
     }
 
-    // proses checkout (POST dari halaman keranjang)
+
     public function tambah()
     {
         if ($this->input->method() !== 'post') {
@@ -71,7 +69,7 @@ class Pesanan_controller extends CI_Controller
             return;
         }
 
-        // cek stok semua produk sebelum membuat pesanan
+      
         $total = 0;
         $baris = [];
         foreach ($items as $item) {
@@ -89,7 +87,7 @@ class Pesanan_controller extends CI_Controller
         $pelanggan = $this->pelanggan_model->get_by_id($pelanggan_id);
         $alamat = trim($pelanggan['alamat'] . ', ' . $pelanggan['kota'] . ' ' . $pelanggan['kode_pos'] . ', ' . $pelanggan['provinsi'], ' ,');
 
-        // semua langkah dalam satu transaksi: gagal di tengah = tidak ada yang tersimpan
+      
         $berhasil = TRUE;
         $this->db->trans_begin();
         $this->db->insert('pesanan', [
@@ -106,7 +104,7 @@ class Pesanan_controller extends CI_Controller
                 'jumlah' => $b['jumlah'],
                 'harga' => $b['harga']
             ]);
-            // kurangi stok; syarat stok >= jumlah mencegah stok menjadi minus
+      
             $this->db->query('UPDATE produk SET stok = stok - ? WHERE id_produk = ? AND stok >= ?', [$b['jumlah'], $b['produk_id'], $b['jumlah']]);
             if ($this->db->affected_rows() != 1) {
                 $berhasil = FALSE;

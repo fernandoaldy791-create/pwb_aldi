@@ -27,7 +27,7 @@
 
 <body class="sb-nav-fixed">
 <?php
-// data navbar: daftar kategori, status login pelanggan, dan jumlah isi keranjang
+
 $ci =& get_instance();
 $ci->load->model('produk_kategori_model');
 $nav_kategori = $ci->produk_kategori_model->get_all();

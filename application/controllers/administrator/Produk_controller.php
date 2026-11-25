@@ -14,9 +14,7 @@ class Produk_controller extends CI_Controller
         $this->load->model('produk_gambar_model');
     }
 
-    /* =====================================================================
-     *  TAMPIL PRODUK
-     * ===================================================================== */
+
     public function index()
     {
         $data['title'] = 'Daftar Produk';
@@ -27,9 +25,7 @@ class Produk_controller extends CI_Controller
         $this->load->view('administrator/templates/footer');
     }
 
-    /* =====================================================================
-     *  TAMBAH PRODUK
-     * ===================================================================== */
+  
     public function tambah_produk()
     {
         $data['title'] = 'Tambah Produk';
@@ -48,7 +44,7 @@ class Produk_controller extends CI_Controller
         }
     }
 
-    // callback form_validation: pastikan kategori yang dipilih benar-benar ada
+   
     public function _cek_kategori($id)
     {
         if ($this->produk_kategori_model->get_by_id($id)) {
@@ -68,9 +64,9 @@ class Produk_controller extends CI_Controller
             'deskripsi' => ucfirst($this->input->post('deskripsi_produk'))
         ];
 
-        #simpan dan return id_produk yang disimpan
+    
         $id_produk = $this->produk_model->tambah($data);
-        # simpan data, trus lakukan upload gambar kebalikan id produk
+   
 
         if ($id_produk) {
             $gagal = $this->__produk_gambar_upload($id_produk);
@@ -86,10 +82,7 @@ class Produk_controller extends CI_Controller
         redirect('admin/produk');
     }
 
-    /**
-     * Upload satu atau banyak gambar (input name="gambar_produk[]") milik sebuah produk.
-     * Return: array pesan error (kosong = semua berhasil / tidak ada gambar dipilih)
-     */
+
     private function __produk_gambar_upload($id_produk)
     {
         $gagal = [];
@@ -117,7 +110,7 @@ class Produk_controller extends CI_Controller
                 $config['max_size'] = '5000';
                 $config['file_name'] = "produk-" . $id_produk . '-' . date('YmdHis') . '-' . $i;
 
-                // initialize() dipakai (bukan load->library lagi) supaya config tiap file benar-benar dipakai
+   
                 $this->upload->initialize($config);
 
                 if ($this->upload->do_upload('file')) {
@@ -136,12 +129,10 @@ class Produk_controller extends CI_Controller
         return $gagal;
     }
 
-    /* =====================================================================
-     *  UBAH PRODUK
-     * ===================================================================== */
+
     public function ubah_produk($id)
     {
-        // check dulu apakah id dengan produk ada?
+
         $produk = $this->produk_model->get_by_id($id);
         if ($produk) {
             $this->form_validation->set_rules('nama_produk', 'Nama produk', 'required|trim|max_length[100]');
@@ -178,11 +169,7 @@ class Produk_controller extends CI_Controller
 
         $ubah = $this->produk_model->ubah($data, $id);
         if ($ubah) {
-            /* ---- TUGAS: ganti / tambah gambar saat tombol Ubah diklik ----
-             * - file baru yang dipilih ditambahkan ke produk
-             * - jika "Ganti semua gambar lama" dicentang dan upload berhasil,
-             *   gambar lama dihapus (database + file) sehingga benar-benar tergantikan
-             */
+         
             $gambar_lama = $this->produk_gambar_model->get_by_produk_id($id);
             $jumlah_sebelum = count($gambar_lama);
             $gagal = $this->__produk_gambar_upload($id);
@@ -206,9 +193,7 @@ class Produk_controller extends CI_Controller
         redirect('admin/produk');
     }
 
-    /* =====================================================================
-     *  HAPUS GAMBAR (satu gambar, dari halaman ubah produk)
-     * ===================================================================== */
+
     public function hapus_gambar($id_gambar)
     {
         $gambar = $this->produk_gambar_model->get_by_id($id_gambar);
@@ -222,27 +207,25 @@ class Produk_controller extends CI_Controller
         }
     }
 
-    /* =====================================================================
-     *  HAPUS PRODUK
-     * ===================================================================== */
+ 
     public function hapus_produk($id)
     {
-        // check apakah ada produk
+      
         $produk = $this->produk_model->get_by_id($id);
         if ($produk) {
-            // produk yang sudah pernah dipesan tidak boleh dihapus (cek SEBELUM gambar dihapus)
+   
             if ($this->produk_model->count_pesanan($id) > 0) {
                 $this->__alert('danger', 'Produk tidak dapat dihapus karena sudah pernah dipesan pelanggan.');
                 redirect('admin/produk');
                 return;
             }
-            // ambil data gambar
+         
             $list_gambar = $this->produk_gambar_model->get_by_produk_id($id);
             foreach ($list_gambar as $gambar) {
-                // hapus gambar di database + hapus gambar di file
+           
                 $this->__hapus_file_gambar($gambar['id_gambar'], $gambar['nama_gambar']);
             }
-            // hapus produk di database
+         
             $this->produk_model->hapus($id);
             $this->__alert('success', 'Berhasil menghapus produk!!');
             redirect('admin/produk');
@@ -252,11 +235,7 @@ class Produk_controller extends CI_Controller
         }
     }
 
-    /* =====================================================================
-     *  HELPER PRIVATE
-     * ===================================================================== */
 
-    // hapus gambar di database dan file fisiknya
     private function __hapus_file_gambar($id_gambar, $nama_gambar)
     {
         $this->produk_gambar_model->hapus($id_gambar);
@@ -266,7 +245,7 @@ class Produk_controller extends CI_Controller
         }
     }
 
-    // flashdata 'message' berupa alert (ikon svg didefinisikan di templates/header.php)
+
     private function __alert($tipe, $pesan)
     {
         $icon = ($tipe === 'success') ? 'check-circle-fill' : 'exclamation-triangle-fill';
