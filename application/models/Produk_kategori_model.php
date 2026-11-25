@@ -30,7 +30,7 @@ class Produk_kategori_model extends CI_Model
         return $this->db->where('id_kategori', (int) $id)->delete($this->table);
     }
 
-    // jumlah produk yang memakai kategori ini (kategori tidak boleh dihapus jika masih dipakai)
+   
     public function count_produk($id)
     {
         return (int) $this->db->where('categori_id', (int) $id)->count_all_results('produk');

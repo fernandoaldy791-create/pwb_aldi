@@ -6,14 +6,7 @@ class Produk_model extends CI_Model
 
     private $_table = "produk";
 
-    /**
-     * Daftar produk (dipakai admin dan halaman depan).
-     * Kolom "terjual" dihitung dari pesanan yang sudah dibayar/dikirim/selesai.
-     *
-     * @param int    $kategori_id  0 = semua kategori
-     * @param string $keyword      kata kunci nama produk ('' = tanpa filter)
-     * @param int    $limit        0 = tanpa batas
-     */
+ 
     public function get_all($kategori_id = 0, $keyword = '', $limit = 0)
     {
         $terjual = "(SELECT COALESCE(SUM(pp.jumlah), 0) FROM pesanan_produk pp "
@@ -40,7 +33,7 @@ class Produk_model extends CI_Model
     public function tambah($data)
     {
         $this->db->insert($this->_table, $data);
-        #untuk check apakah berhasil atau tidak input data
+   
         return $this->db->insert_id();
     }
 
@@ -54,8 +47,7 @@ class Produk_model extends CI_Model
     public function ubah($data, $id)
     {
         $this->db->where('id_produk', $id);
-        // update() mengembalikan TRUE bila query berhasil, walaupun datanya tidak berubah
-        // (affected_rows() == 0 tidak boleh dianggap gagal, mis. saat hanya mengganti gambar)
+
         return (bool) $this->db->update($this->_table, $data);
     }
 
@@ -64,7 +56,7 @@ class Produk_model extends CI_Model
         $this->db->delete($this->_table, array('id_produk' => $id));
     }
 
-    // produk yang sudah pernah dipesan tidak boleh dihapus (riwayat pesanan harus tetap utuh)
+   
     public function count_pesanan($id)
     {
         return (int) $this->db->where('produk_id', (int) $id)->count_all_results('pesanan_produk');
